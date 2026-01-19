@@ -1,6 +1,12 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@font-face {
+  font-family: "Oswald";
+  src: url("/Oswald-VariableFont_wght.ttf") format("truetype-variations");
+  font-weight: 100 900;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
@@ -36,9 +42,9 @@
   --sidebar-border: oklch(0.93 0.01 261.82);
   --sidebar-ring: oklch(0.48 0.20 260.47);
 
-  --font-sans: Inter, sans-serif;
-  --font-serif: Source Serif 4, serif;
-  --font-mono: IBM Plex Mono, monospace;
+  --font-sans: var(--font-geist-sans);
+  --font-serif: var(--font-geist-sans), sans-serif;
+  --font-mono: var(--font-geist-mono);
 
   --radius: 0.375rem;
   

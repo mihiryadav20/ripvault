@@ -40,7 +40,7 @@ export function LoginForm() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="text-2xl font-bold">Welcome back</h1>
+        <h1 className="text-4xl font-bold">Welcome Back 👋</h1>
         <p className="text-muted-foreground text-sm text-balance">
           Sign in to your account to continue
         </p>
