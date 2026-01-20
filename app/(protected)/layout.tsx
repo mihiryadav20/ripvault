@@ -1,8 +1,7 @@
-import Image from "next/image"
-import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import { UserButton } from "@/components/auth/user-button"
+import { AppSidebar } from "@/components/layout/app-sidebar"
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 
 export default async function ProtectedLayout({
   children,
@@ -16,21 +15,14 @@ export default async function ProtectedLayout({
   }
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b p-4 flex justify-between items-center">
-        <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
-          <Image
-            src="/ripvault.png"
-            alt="RIP Vault"
-            width={28}
-            height={28}
-            className="rounded-md"
-          />
-          RIP Vault
-        </Link>
-        <UserButton />
-      </header>
-      <main className="p-4">{children}</main>
-    </div>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="flex h-14 items-center gap-2 border-b px-4 md:hidden">
+          <SidebarTrigger />
+        </header>
+        <main className="flex-1 p-4 md:p-6">{children}</main>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

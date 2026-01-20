@@ -27,9 +27,10 @@ declare global {
 
 interface AddFundsDialogProps {
   onSuccess?: () => void
+  children?: React.ReactNode
 }
 
-export function AddFundsDialog({ onSuccess }: AddFundsDialogProps) {
+export function AddFundsDialog({ onSuccess, children }: AddFundsDialogProps) {
   const [open, setOpen] = useState(false)
   const [amount, setAmount] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -80,10 +81,12 @@ export function AddFundsDialog({ onSuccess }: AddFundsDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="gap-2">
-          <Plus className="size-4" />
-          Add Funds
-        </Button>
+        {children || (
+          <Button size="sm" className="gap-2">
+            <Plus className="size-4" />
+            Add Funds
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

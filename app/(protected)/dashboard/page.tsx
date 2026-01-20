@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth"
-import { BalanceDisplay } from "@/components/payment/balance-display"
+import { PokemonCards } from "@/components/pokemon/pokemon-cards"
 import Script from "next/script"
 
 export default async function DashboardPage() {
@@ -19,7 +19,10 @@ export default async function DashboardPage() {
           </p>
         </div>
 
-        <BalanceDisplay />
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Pokemon Cards</h2>
+          <PokemonCards />
+        </div>
       </div>
     </>
   )

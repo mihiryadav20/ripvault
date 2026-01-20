@@ -47,7 +47,7 @@
   --font-mono: var(--font-geist-mono);
 
   --radius: 0.375rem;
-  
+
   --shadow-2xs: 0 1px 3px 0px oklch(0.00 0 0 / 0.05);
   --shadow-xs: 0 1px 3px 0px oklch(0.00 0 0 / 0.05);
   --shadow-sm: 0 1px 3px 0px oklch(0.00 0 0 / 0.10), 0 1px 2px -1px oklch(0.00 0 0 / 0.10);
@@ -56,7 +56,7 @@
   --shadow-lg: 0 1px 3px 0px oklch(0.00 0 0 / 0.10), 0 4px 6px -1px oklch(0.00 0 0 / 0.10);
   --shadow-xl: 0 1px 3px 0px oklch(0.00 0 0 / 0.10), 0 8px 10px -1px oklch(0.00 0 0 / 0.10);
   --shadow-2xl: 0 1px 3px 0px oklch(0.00 0 0 / 0.25);
-  
+
 }
 
 .dark {
@@ -91,7 +91,7 @@
   --sidebar-accent-foreground: oklch(0.93 0.01 261.82);
   --sidebar-border: oklch(0.35 0.04 261.40);
   --sidebar-ring: oklch(0.56 0.24 260.92);
-  
+
   --shadow-2xs: 0 1px 3px 0px oklch(0.00 0 0 / 0.05);
   --shadow-xs: 0 1px 3px 0px oklch(0.00 0 0 / 0.05);
   --shadow-sm: 0 1px 3px 0px oklch(0.00 0 0 / 0.10), 0 1px 2px -1px oklch(0.00 0 0 / 0.10);
@@ -153,7 +153,7 @@
   --shadow-xl: var(--shadow-xl);
   --shadow-2xl: var(--shadow-2xl);
 }
-  
+
 @layer base {
   body {
     @apply text-foreground font-sans bg-background;
@@ -161,5 +161,14 @@
 
   h1, h2, h3, h4, h5, h6{
     @apply font-serif;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
   }
 }
