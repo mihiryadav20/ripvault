@@ -1,10 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { signOut } from "next-auth/react"
+import { signOut, useSession } from "next-auth/react"
 import {
   Wallet,
   Plus,
@@ -20,11 +19,12 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { AddFundsDialog } from "@/components/payment/add-funds-dialog"
@@ -51,17 +51,9 @@ const mainNavItems = [
   },
 ]
 
-const secondaryNavItems = [
-  {
-    id: "profile",
-    title: "Profile",
-    url: "/dashboard/profile",
-    icon: User,
-  },
-]
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
+  const { data: session } = useSession()
   const [balance, setBalance] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -97,100 +89,86 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {/* Logo Header */}
       <SidebarHeader className="p-4">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <Image
-            src="/ripvault.png"
-            alt="RipVault"
-            width={32}
-            height={32}
-            className="rounded-md"
-          />
-          <span className="text-lg font-semibold" style={{ fontFamily: "Oswald" }}>RipVault</span>
+          <span className="text-3xl font-semibold" style={{ fontFamily: "Oswald" }}>RipVault</span>
         </Link>
       </SidebarHeader>
 
-      <SidebarSeparator />
-
-      {/* Wallet Section */}
-      <SidebarGroup className="p-4">
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Wallet className="size-5 text-primary" />
-            <span className="text-sm text-muted-foreground">Wallet Balance</span>
-          </div>
-          <div className="text-2xl font-bold">
-            {isLoading ? (
-              <div className="h-8 w-28 bg-muted animate-pulse rounded" />
-            ) : (
-              balance !== null ? formatCurrency(balance) : "₹0.00"
-            )}
-          </div>
-          <AddFundsDialog onSuccess={fetchBalance}>
-            <Button className="w-full" size="sm">
-              <Plus className="size-4 mr-2" />
-              Deposit
-            </Button>
-          </AddFundsDialog>
-        </div>
-      </SidebarGroup>
-
-      <SidebarSeparator />
-
-      {/* Main Navigation */}
       <SidebarContent>
+        {/* Wallet Section */}
         <SidebarGroup>
+          <SidebarGroupLabel>Wallet</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <div className="px-2 space-y-3">
+              <div className="flex items-center gap-2">
+                <Wallet className="size-5 text-primary" />
+                <div className="text-xl font-bold">
+                  {isLoading ? (
+                    <div className="h-6 w-24 bg-muted animate-pulse rounded" />
+                  ) : (
+                    balance !== null ? formatCurrency(balance) : "₹0.00"
+                  )}
+                </div>
+              </div>
+              <AddFundsDialog onSuccess={fetchBalance}>
+                <Button className="w-full" size="sm">
+                  <Plus className="size-4 mr-2" />
+                  Deposit
+                </Button>
+              </AddFundsDialog>
+            </div>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Main Navigation */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNavItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     asChild
-                    isActive={pathname === item.url}
+                    isActive={pathname === item.url || pathname.startsWith(item.url + "/")}
                     tooltip={item.title}
-                    disabled={item.comingSoon}
                     className={item.comingSoon ? "opacity-50 cursor-not-allowed" : ""}
                   >
                     <Link href={item.comingSoon ? "#" : item.url}>
-                      <item.icon className="size-4" />
+                      <item.icon />
                       <span>{item.title}</span>
-                      {item.comingSoon && (
-                        <span className="ml-auto text-xs bg-muted px-1.5 py-0.5 rounded">
-                          Soon
-                        </span>
-                      )}
                     </Link>
                   </SidebarMenuButton>
+                  {item.comingSoon && (
+                    <SidebarMenuBadge className="bg-primary/10 rounded-full text-xs">
+                      Soon
+                    </SidebarMenuBadge>
+                  )}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarSeparator />
-
-        {/* Secondary Navigation */}
+        {/* Account */}
         <SidebarGroup>
+          <SidebarGroupLabel>Account</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {secondaryNavItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.url}
-                    tooltip={item.title}
-                  >
-                    <Link href={item.url}>
-                      <item.icon className="size-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/dashboard/profile"}
+                  tooltip="Profile"
+                >
+                  <Link href="/dashboard/profile">
+                    <User />
+                    <span>{session?.user?.name || "Profile"}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-
-      <SidebarSeparator />
 
       {/* Logout Footer */}
       <SidebarFooter className="p-2">
@@ -201,7 +179,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               tooltip="Logout"
               className="text-destructive hover:text-destructive hover:bg-destructive/10"
             >
-              <LogOut className="size-4" />
+              <LogOut />
               <span>Logout</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
