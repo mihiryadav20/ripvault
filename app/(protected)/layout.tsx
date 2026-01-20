@@ -21,7 +21,7 @@ export default async function ProtectedLayout({
         <header className="flex h-14 items-center gap-2 border-b px-4 md:hidden">
           <SidebarTrigger />
         </header>
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="flex-1 p-4 md:p-6 overflow-hidden min-w-0">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   )

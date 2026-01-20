@@ -86,7 +86,7 @@ export function ScryfallCards() {
   }
 
   return (
-    <div className="relative">
+    <div className="relative w-full overflow-hidden">
       <div
         ref={scrollContainerRef}
         className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
