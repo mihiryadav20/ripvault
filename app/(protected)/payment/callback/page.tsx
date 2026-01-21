@@ -1,17 +1,22 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { CheckCircle, XCircle, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useBalance } from "@/context/balance-context"
 
 export default function PaymentCallbackPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const { refreshBalance } = useBalance()
   const [status, setStatus] = useState<"loading" | "success" | "failed">("loading")
   const [message, setMessage] = useState("")
+  const hasVerified = useRef(false)
 
   useEffect(() => {
+    if (hasVerified.current) return
+
     const orderId = searchParams.get("order_id")
 
     if (!orderId) {
@@ -19,6 +24,8 @@ export default function PaymentCallbackPage() {
       setMessage("No order ID found")
       return
     }
+
+    hasVerified.current = true
 
     const verifyPayment = async () => {
       try {
@@ -33,6 +40,7 @@ export default function PaymentCallbackPage() {
         if (data.status === "SUCCESS") {
           setStatus("success")
           setMessage("Payment successful! Your balance has been updated.")
+          refreshBalance()
         } else if (data.status === "FAILED" || data.status === "EXPIRED") {
           setStatus("failed")
           setMessage(data.message || "Payment failed")
@@ -47,7 +55,7 @@ export default function PaymentCallbackPage() {
     }
 
     verifyPayment()
-  }, [searchParams])
+  }, [searchParams, refreshBalance])
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
@@ -65,7 +73,7 @@ export default function PaymentCallbackPage() {
             <CheckCircle className="size-16 mx-auto text-green-500" />
             <h1 className="text-2xl font-bold mt-4">Payment Successful</h1>
             <p className="text-muted-foreground mt-2">{message}</p>
-            <Button className="mt-6" onClick={() => router.push("/dashboard?refresh=true")}>
+            <Button className="mt-6" onClick={() => router.push("/dashboard")}>
               Go to Dashboard
             </Button>
           </>

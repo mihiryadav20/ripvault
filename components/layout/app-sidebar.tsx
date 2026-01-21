@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
@@ -28,6 +27,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { AddFundsDialog } from "@/components/payment/add-funds-dialog"
+import { useBalance } from "@/context/balance-context"
 
 const mainNavItems = [
   {
@@ -54,27 +54,7 @@ const mainNavItems = [
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
   const { data: session } = useSession()
-  const [balance, setBalance] = useState<number | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  const fetchBalance = async () => {
-    setIsLoading(true)
-    try {
-      const response = await fetch("/api/user/balance")
-      const data = await response.json()
-      if (response.ok) {
-        setBalance(data.balance)
-      }
-    } catch (error) {
-      console.error("Failed to fetch balance:", error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchBalance()
-  }, [])
+  const { balance, isLoading, refreshBalance } = useBalance()
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-IN", {
@@ -109,7 +89,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   )}
                 </div>
               </div>
-              <AddFundsDialog onSuccess={fetchBalance}>
+              <AddFundsDialog onSuccess={refreshBalance}>
                 <Button className="w-full" size="sm">
                   <Plus className="size-4 mr-2" />
                   Deposit

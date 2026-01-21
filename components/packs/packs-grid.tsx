@@ -4,22 +4,24 @@ import { useState } from "react"
 import { Pack, TCGType, TCG_INFO, generatePacks } from "@/lib/packs"
 import { PackCard } from "./pack-card"
 import { toast } from "sonner"
+import { useBalance } from "@/context/balance-context"
 
 interface PacksGridProps {
   tcg: TCGType
-  balance: number
-  onBalanceUpdate: () => void
 }
 
-export function PacksGrid({ tcg, balance, onBalanceUpdate }: PacksGridProps) {
+export function PacksGrid({ tcg }: PacksGridProps) {
   const [purchasing, setPurchasing] = useState<string | null>(null)
+  const { balance, refreshBalance } = useBalance()
   const packs = generatePacks(tcg)
   const tcgInfo = TCG_INFO[tcg]
 
+  const currentBalance = balance ?? 0
+
   const handlePurchase = async (pack: Pack) => {
-    if (balance < pack.price) {
+    if (currentBalance < pack.price) {
       toast.error("Insufficient Balance", {
-        description: `You need ₹${pack.price - balance} more to purchase this pack.`,
+        description: `You need ₹${pack.price - currentBalance} more to purchase this pack.`,
       })
       return
     }
@@ -43,7 +45,7 @@ export function PacksGrid({ tcg, balance, onBalanceUpdate }: PacksGridProps) {
         description: `You got ${data.cards.length} cards! Check your collection.`,
       })
 
-      onBalanceUpdate()
+      refreshBalance()
     } catch {
       toast.error("Purchase Failed", {
         description: "Something went wrong. Please try again.",
@@ -62,7 +64,7 @@ export function PacksGrid({ tcg, balance, onBalanceUpdate }: PacksGridProps) {
             key={pack.id}
             pack={pack}
             onPurchase={handlePurchase}
-            disabled={purchasing === pack.id || balance < pack.price}
+            disabled={purchasing === pack.id || currentBalance < pack.price}
           />
         ))}
       </div>
