@@ -34,16 +34,16 @@ model Session {
 }
 
 model User {
-  id            String        @id @default(cuid())
+  id            String         @id @default(cuid())
   name          String?
-  email         String?       @unique
+  email         String?        @unique
   emailVerified DateTime?
   image         String?
-  balance       Float         @default(0)
+  balance       Float          @default(0)
   accounts      Account[]
   sessions      Session[]
   transactions  Transaction[]
-  collection    Card[]
+  collection    UserCard[]
   packPurchases PackPurchase[]
 }
 
@@ -56,49 +56,67 @@ model VerificationToken {
 }
 
 model Transaction {
-  id              String   @id @default(cuid())
-  userId          String
-  orderId         String   @unique
-  amount          Float
-  currency        String   @default("INR")
-  status          String   @default("PENDING")
+  id               String   @id @default(cuid())
+  userId           String
+  orderId          String   @unique
+  amount           Float
+  currency         String   @default("INR")
+  status           String   @default("PENDING")
   paymentSessionId String?
-  cfOrderId       String?
-  paymentMethod   String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  cfOrderId        String?
+  paymentMethod    String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model Card {
-  id          String   @id @default(cuid())
-  userId      String
-  cardId      String
-  tcg         String
-  name        String
-  imageUrl    String
-  rarity      String?
-  type        String?
-  price       Float?
-  metadata    String?
-  createdAt   DateTime @default(now())
+model Pack {
+  id            String         @id @default(cuid())
+  name          String
+  price         Float
+  tcg           String
+  tier          String
+  cardTemplates CardTemplate[]
+  packPurchases PackPurchase[]
+}
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+model CardTemplate {
+  id        String     @id @default(cuid())
+  cardId    String
+  tcg       String
+  name      String
+  imageUrl  String
+  rarity    String?
+  type      String?
+  price     Float?
+  metadata  String?
+  packs     Pack[]
+  userCards UserCard[]
 
-  @@index([userId, tcg])
+  @@unique([cardId, tcg])
+}
+
+model UserCard {
+  id             String       @id @default(cuid())
+  userId         String
+  cardTemplateId String
+  createdAt      DateTime     @default(now())
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cardTemplate   CardTemplate @relation(fields: [cardTemplateId], references: [id])
+
+  @@index([userId])
 }
 
 model PackPurchase {
   id        String   @id @default(cuid())
   userId    String
-  tcg       String
-  tier      String
+  packId    String
   cardCount Int
   price     Float
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pack      Pack     @relation(fields: [packId], references: [id])
 
   @@index([userId])
 }

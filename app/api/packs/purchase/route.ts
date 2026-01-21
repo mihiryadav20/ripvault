@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { PACK_CONFIG, PackTier, TCGType } from "@/lib/packs"
 
 interface CardData {
   cardId: string
@@ -86,58 +85,60 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { tcg, tier } = body as { tcg: TCGType; tier: PackTier }
+    const { packId } = body as { packId: string }
 
-    if (!tcg || !tier || !PACK_CONFIG[tier]) {
+    if (!packId) {
       return NextResponse.json({ error: "Invalid pack" }, { status: 400 })
     }
 
-    const packConfig = PACK_CONFIG[tier]
+    const pack = await prisma.pack.findUnique({
+      where: { id: packId },
+    })
+
+    if (!pack) {
+      return NextResponse.json({ error: "Pack not found" }, { status: 404 })
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { balance: true },
     })
 
-    if (!user || user.balance < packConfig.price) {
+    if (!user || user.balance < pack.price) {
       return NextResponse.json({ error: "Insufficient balance" }, { status: 400 })
     }
 
     let cards: CardData[] = []
+    const cardCount = 3 // All packs give 3 cards
 
-    switch (tcg) {
+    switch (pack.tcg) {
       case "pokemon":
-        cards = await fetchPokemonCards(packConfig.cardCount)
+        cards = await fetchPokemonCards(cardCount)
         break
       case "scryfall":
-        cards = await fetchScryfallCards(packConfig.cardCount)
+        cards = await fetchScryfallCards(cardCount)
         break
       case "yugioh":
-        cards = await fetchYugiohCards(packConfig.cardCount)
+        cards = await fetchYugiohCards(cardCount)
         break
       default:
         return NextResponse.json({ error: "Invalid TCG" }, { status: 400 })
     }
 
-    await prisma.$transaction([
-      prisma.user.update({
-        where: { id: session.user.id },
-        data: { balance: { decrement: packConfig.price } },
-      }),
-      prisma.packPurchase.create({
-        data: {
-          userId: session.user.id,
-          tcg,
-          tier,
-          cardCount: packConfig.cardCount,
-          price: packConfig.price,
-        },
-      }),
-      ...cards.map((card) =>
-        prisma.card.create({
-          data: {
-            userId: session.user.id,
+    const cardTemplates = await Promise.all(
+      cards.map((card) =>
+        prisma.cardTemplate.upsert({
+          where: { cardId_tcg: { cardId: card.cardId, tcg: pack.tcg } },
+          update: {
+            name: card.name,
+            imageUrl: card.imageUrl,
+            rarity: card.rarity,
+            type: card.type,
+            price: card.price,
+          },
+          create: {
             cardId: card.cardId,
-            tcg,
+            tcg: pack.tcg,
             name: card.name,
             imageUrl: card.imageUrl,
             rarity: card.rarity,
@@ -145,12 +146,35 @@ export async function POST(request: Request) {
             price: card.price,
           },
         })
+      )
+    )
+
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: session.user.id },
+        data: { balance: { decrement: pack.price } },
+      }),
+      prisma.packPurchase.create({
+        data: {
+          userId: session.user.id,
+          packId: pack.id,
+          cardCount: cardCount,
+          price: pack.price,
+        },
+      }),
+      ...cardTemplates.map((cardTemplate) =>
+        prisma.userCard.create({
+          data: {
+            userId: session.user.id,
+            cardTemplateId: cardTemplate.id,
+          },
+        })
       ),
     ])
 
     return NextResponse.json({
       success: true,
-      cards: cards.map((c) => ({
+      cards: cardTemplates.map((c) => ({
         name: c.name,
         imageUrl: c.imageUrl,
         rarity: c.rarity,

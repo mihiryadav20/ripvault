@@ -19,7 +19,7 @@ export function PacksGrid({ tcg, balance, onBalanceUpdate }: PacksGridProps) {
   const handlePurchase = async (pack: Pack) => {
     if (balance < pack.price) {
       toast.error("Insufficient Balance", {
-        description: `You need $${pack.price - balance} more to purchase this pack.`,
+        description: `You need ₹${pack.price - balance} more to purchase this pack.`,
       })
       return
     }
@@ -55,10 +55,7 @@ export function PacksGrid({ tcg, balance, onBalanceUpdate }: PacksGridProps) {
 
   return (
     <div className="space-y-4">
-      <div className={`flex items-center gap-2 ${tcgInfo.color}`}>
-        <div className={`size-3 rounded-full ${tcgInfo.bgColor.replace("/10", "")}`} />
-        <h2 className="text-xl font-semibold">{tcgInfo.name} Packs</h2>
-      </div>
+      <h2 className="text-3xl font-normal">{tcgInfo.name} Packs</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {packs.map((pack) => (
           <PackCard
