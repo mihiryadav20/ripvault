@@ -38,9 +38,9 @@ export function HeroCarousel() {
           loop: true,
         }}
       >
-        <CarouselContent className="ml-0">
+        <CarouselContent className="m-0">
           {slides.map((slide) => (
-            <CarouselItem key={slide.id} className="pl-0">
+            <CarouselItem key={slide.id} className="p-0">
               <div className="relative aspect-[16/5] md:aspect-[21/6] w-full">
                 <Image
                   src={slide.src}

@@ -1,24 +1,51 @@
-import { Package } from "lucide-react"
+"use client"
+
+import { useEffect, useState, useCallback } from "react"
+import { PacksGrid } from "@/components/packs/packs-grid"
+import { Wallet } from "lucide-react"
 
 export default function PacksPage() {
+  const [balance, setBalance] = useState(0)
+  const [loading, setLoading] = useState(true)
+
+  const fetchBalance = useCallback(async () => {
+    try {
+      const response = await fetch("/api/user/balance")
+      if (response.ok) {
+        const data = await response.json()
+        setBalance(data.balance)
+      }
+    } catch (error) {
+      console.error("Failed to fetch balance:", error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchBalance()
+  }, [fetchBalance])
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Packs</h1>
-        <p className="text-muted-foreground">
-          Browse and open card packs
-        </p>
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Packs</h1>
+          <p className="text-muted-foreground">
+            Purchase packs to add cards to your collection
+          </p>
+        </div>
+        <div className="flex items-center gap-2 bg-muted px-4 py-2 rounded-lg">
+          <Wallet className="size-5 text-primary" />
+          <span className="font-semibold">
+            {loading ? "..." : `$${balance.toFixed(2)}`}
+          </span>
+        </div>
       </div>
 
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="size-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-          <Package className="size-8 text-primary" />
-        </div>
-        <h2 className="text-xl font-semibold mb-2">Coming Soon</h2>
-        <p className="text-muted-foreground max-w-md">
-          Card packs will be available here. You&apos;ll be able to purchase and open packs to collect rare cards.
-        </p>
-      </div>
+      <PacksGrid tcg="pokemon" balance={balance} onBalanceUpdate={fetchBalance} />
+      <PacksGrid tcg="scryfall" balance={balance} onBalanceUpdate={fetchBalance} />
+      <PacksGrid tcg="yugioh" balance={balance} onBalanceUpdate={fetchBalance} />
     </div>
   )
 }
