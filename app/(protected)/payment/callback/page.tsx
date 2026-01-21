@@ -65,7 +65,7 @@ export default function PaymentCallbackPage() {
             <CheckCircle className="size-16 mx-auto text-green-500" />
             <h1 className="text-2xl font-bold mt-4">Payment Successful</h1>
             <p className="text-muted-foreground mt-2">{message}</p>
-            <Button className="mt-6" onClick={() => router.push("/dashboard")}>
+            <Button className="mt-6" onClick={() => router.push("/dashboard?refresh=true")}>
               Go to Dashboard
             </Button>
           </>

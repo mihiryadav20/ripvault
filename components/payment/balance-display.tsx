@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { Wallet, RefreshCw } from "lucide-react"
 import { AddFundsDialog } from "./add-funds-dialog"
 import { Button } from "@/components/ui/button"
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button"
 export function BalanceDisplay() {
   const [balance, setBalance] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const searchParams = useSearchParams()
 
   const fetchBalance = async () => {
     setIsLoading(true)
@@ -27,6 +29,15 @@ export function BalanceDisplay() {
   useEffect(() => {
     fetchBalance()
   }, [])
+
+  // Refresh balance when redirected from payment callback
+  useEffect(() => {
+    if (searchParams.get("refresh") === "true") {
+      fetchBalance()
+      // Clean up the URL
+      window.history.replaceState({}, "", window.location.pathname)
+    }
+  }, [searchParams])
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-IN", {

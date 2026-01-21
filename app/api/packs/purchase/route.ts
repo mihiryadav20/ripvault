@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { PACK_CONFIG, PackTier, TCGType } from "@/lib/packs"
 
 interface CardData {
   cardId: string
@@ -10,6 +11,10 @@ interface CardData {
   type?: string
   price?: number
 }
+
+// Valid TCG types
+const VALID_TCG_TYPES: TCGType[] = ["pokemon", "scryfall", "yugioh"]
+const VALID_TIERS: PackTier[] = ["starter", "premium", "legend", "grail"]
 
 async function fetchPokemonCards(count: number): Promise<CardData[]> {
   const randomPage = Math.floor(Math.random() * 100) + 1
@@ -85,33 +90,33 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { packId } = body as { packId: string }
+    const { tcg, tier } = body as { tcg: string; tier: string }
 
-    if (!packId) {
-      return NextResponse.json({ error: "Invalid pack" }, { status: 400 })
+    // Validate tcg and tier
+    if (!tcg || !VALID_TCG_TYPES.includes(tcg as TCGType)) {
+      return NextResponse.json({ error: "Invalid TCG type" }, { status: 400 })
     }
 
-    const pack = await prisma.pack.findUnique({
-      where: { id: packId },
-    })
-
-    if (!pack) {
-      return NextResponse.json({ error: "Pack not found" }, { status: 404 })
+    if (!tier || !VALID_TIERS.includes(tier as PackTier)) {
+      return NextResponse.json({ error: "Invalid pack tier" }, { status: 400 })
     }
+
+    const packConfig = PACK_CONFIG[tier as PackTier]
+    const price = packConfig.price
+    const cardCount = packConfig.cardCount
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { balance: true },
     })
 
-    if (!user || user.balance < pack.price) {
+    if (!user || user.balance < price) {
       return NextResponse.json({ error: "Insufficient balance" }, { status: 400 })
     }
 
     let cards: CardData[] = []
-    const cardCount = 3 // All packs give 3 cards
 
-    switch (pack.tcg) {
+    switch (tcg) {
       case "pokemon":
         cards = await fetchPokemonCards(cardCount)
         break
@@ -125,10 +130,12 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Invalid TCG" }, { status: 400 })
     }
 
+    console.log(`[Purchase] Fetched ${cards.length} cards for ${tcg}/${tier}`)
+
     const cardTemplates = await Promise.all(
       cards.map((card) =>
         prisma.cardTemplate.upsert({
-          where: { cardId_tcg: { cardId: card.cardId, tcg: pack.tcg } },
+          where: { cardId_tcg: { cardId: card.cardId, tcg } },
           update: {
             name: card.name,
             imageUrl: card.imageUrl,
@@ -138,7 +145,7 @@ export async function POST(request: Request) {
           },
           create: {
             cardId: card.cardId,
-            tcg: pack.tcg,
+            tcg,
             name: card.name,
             imageUrl: card.imageUrl,
             rarity: card.rarity,
@@ -149,28 +156,25 @@ export async function POST(request: Request) {
       )
     )
 
-    await prisma.$transaction([
-      prisma.user.update({
-        where: { id: session.user.id },
-        data: { balance: { decrement: pack.price } },
-      }),
-      prisma.packPurchase.create({
-        data: {
-          userId: session.user.id,
-          packId: pack.id,
-          cardCount: cardCount,
-          price: pack.price,
-        },
-      }),
-      ...cardTemplates.map((cardTemplate) =>
+    console.log(`[Purchase] Created/updated ${cardTemplates.length} card templates`)
+
+    // Create UserCard entries for each card and deduct balance in a single transaction
+    const results = await prisma.$transaction([
+      ...cardTemplates.map((ct: { id: string }) =>
         prisma.userCard.create({
           data: {
-            userId: session.user.id,
-            cardTemplateId: cardTemplate.id,
+            userId: session.user.id!,
+            cardTemplateId: ct.id,
           },
         })
       ),
+      prisma.user.update({
+        where: { id: session.user.id },
+        data: { balance: { decrement: price } },
+      }),
     ])
+
+    console.log(`[Purchase] Transaction complete, created ${results.length - 1} user cards`)
 
     return NextResponse.json({
       success: true,
