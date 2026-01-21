@@ -11,8 +11,8 @@ import {
 } from "@/components/ui/carousel";
 
 const cards = [
-  { src: "/card1.png", alt: "Card 1" },
-  { src: "/card2.jpg", alt: "Card 2" },
+  { src: "/card4.jpg", alt: "Card 4" },
+  { src: "/card5.jpg", alt: "Card 5" },
 ];
 
 export default function CarouselDemo() {

@@ -1,0 +1,3 @@
+"totalCount": 19818 ---pokemon
+"total_cards": 640, ---scryfall
+total_cards

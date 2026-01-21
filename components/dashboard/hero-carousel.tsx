@@ -13,14 +13,14 @@ import {
 
 const slides = [
   {
-    id: 1,
-    src: "/card1.png",
-    alt: "RipVault Card Collection",
-  },
-  {
     id: 2,
     src: "/card2.jpg",
     alt: "Premium Trading Cards",
+  },
+  {
+    id: 4,
+    src: "/card4.jpg",
+    alt: "Card Collection",
   },
 ]
 
