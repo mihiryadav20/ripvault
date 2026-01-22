@@ -18,10 +18,17 @@ RipVault combines the excitement of "ripping" (opening) card packs with secure c
 - User profile management
 
 ### Dashboard
-- **Hero Carousel** - Autoplay image carousel showcasing featured cards and content
-- **Pokemon Cards** - Browse Pokemon TCG cards with rarity and pricing info
-- **Magic: The Gathering Cards** - Browse MTG cards with rarity-based color coding via Scryfall API
-- **Yu-Gi-Oh! Cards** - Browse Yu-Gi-Oh! cards with type-based color badges
+
+### Landing Page
+- Animated pack carousels showcasing tiers across all supported TCGs
+- Clickable pack cards open a details dialog
+- CTA in dialog: **Login to Buy** → redirects to `/auth/login?callbackUrl=/dashboard/packs`
+
+### Dashboard
+- `/dashboard` redirects to `/dashboard/packs`
+- **Packs** - Purchase packs across tiers for each TCG
+- **Card List** - Browse the card list page at `/dashboard/cardlist`
+- **Collection** - View your owned cards at `/dashboard/collection`
 
 ### Card Packs System
 Purchase card packs across 4 tiers for each TCG:
@@ -54,7 +61,7 @@ Purchase card packs across 4 tiers for each TCG:
 ### Sidebar Navigation
 - Logo and branding
 - Wallet section with real-time balance
-- Navigation: Packs, Collection, Marketplace (coming soon)
+- Navigation: Packs, Card List, Collection, Marketplace (coming soon)
 - User profile and logout options
 - Responsive design with mobile hamburger menu
 
@@ -84,7 +91,8 @@ Purchase card packs across 4 tiers for each TCG:
 app/
 ├── (protected)/              # Protected routes requiring auth
 │   ├── dashboard/
-│   │   ├── page.tsx          # Main dashboard with carousels
+│   │   ├── page.tsx          # Redirects to /dashboard/packs
+│   │   ├── cardlist/         # Card list page (moved from /dashboard)
 │   │   ├── collection/       # User's card collection viewer
 │   │   ├── packs/            # Card packs grid with purchase UI
 │   │   └── profile/          # User profile page
@@ -121,7 +129,8 @@ components/
 │   └── balance-display.tsx   # Wallet balance display
 ├── packs/
 │   ├── packs-grid.tsx        # Grid layout for pack cards
-│   └── pack-card.tsx         # Individual pack with 3D effects
+│   ├── pack-card.tsx         # Individual pack with 3D effects
+│   └── animated-pack-card.tsx # Landing page pack card w/ same 3D effects
 └── ui/                       # shadcn/ui components
 
 lib/
@@ -198,6 +207,14 @@ The following external image domains are configured in `next.config.ts`:
 - `images.ygoprodeck.com` - Yu-Gi-Oh card images
 
 ## Key Workflows
+
+### Landing Page Preview → Login → Packs
+1. User lands on `/`
+2. Scrolls through tier-based pack carousels
+3. Clicks a pack card → details dialog opens
+4. Clicks **Login to Buy**
+5. Redirects to `/auth/login?callbackUrl=/dashboard/packs`
+6. After successful login, user lands on `/dashboard/packs`
 
 ### Pack Purchase Flow
 1. User views `/dashboard/packs`

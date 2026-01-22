@@ -109,9 +109,9 @@ export default function Home() {
       </div>
 
       {/* Card Carousels */}
-      <div className="container mx-auto px-4 py-12 space-y-16">
+      <div className="container mx-auto px-1 pt-6 pb-12 space-y-8">
         {tierConfigs.map((tier) => (
-          <section key={tier.id} className="space-y-6">
+          <section key={tier.id} className="space-y-4">
             {/* Commented out headers
             <div className="text-left pl-4">
               <h2 className="text-3xl font-bold">

@@ -1,0 +1,41 @@
+.grid {
+  --dot-size: 1px;
+  --dot-space: 30px;
+  --dot-color: rgba(255, 255, 255, 0.1);
+  --dot-active-color: rgba(255, 255, 255, 0.5);
+  --dot-active-size: 2px;
+  --dot-active-radius: 4px;
+  
+  background-image: 
+    linear-gradient(
+      to right,
+      var(--dot-color) var(--dot-size),
+      transparent var(--dot-size)
+    ),
+    linear-gradient(
+      to bottom,
+      var(--dot-color) var(--dot-size),
+      transparent var(--dot-size)
+    );
+  background-size: var(--dot-space) var(--dot-space);
+  background-position: calc(var(--dot-space) / 2) calc(var(--dot-space) / 2);
+  position: relative;
+  overflow: hidden;
+}
+
+.grid::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    circle at var(--mouse-x, 0) var(--mouse-y, 0),
+    var(--dot-active-color) 0%,
+    transparent 100px
+  );
+  opacity: 0.3;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
