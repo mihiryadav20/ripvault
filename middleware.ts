@@ -14,7 +14,7 @@ export default auth((req) => {
   if (isApiAuthRoute) return
 
   if (isAuthRoute && isLoggedIn) {
-    return Response.redirect(new URL("/dashboard", nextUrl))
+    return Response.redirect(new URL("/dashboard/packs", nextUrl))
   }
 
   if (isProtectedRoute && !isLoggedIn) {

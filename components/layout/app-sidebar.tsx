@@ -8,6 +8,7 @@ import {
   Plus,
   Package,
   Layers,
+  List,
   ShoppingCart,
   User,
   LogOut,
@@ -35,6 +36,12 @@ const mainNavItems = [
     title: "Packs",
     url: "/dashboard/packs",
     icon: Package,
+  },
+  {
+    id: "cardlist",
+    title: "Card List",
+    url: "/dashboard/cardlist",
+    icon: List,
   },
   {
     id: "collection",

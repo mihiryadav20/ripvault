@@ -17,7 +17,7 @@ export function LoginForm() {
     try {
       await signIn("resend", {
         email,
-        callbackUrl: "/dashboard",
+        callbackUrl: "/dashboard/packs",
       })
     } catch (error) {
       console.error("Magic link error:", error)
@@ -29,7 +29,7 @@ export function LoginForm() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
     try {
-      await signIn("google", { callbackUrl: "/dashboard" })
+      await signIn("google", { callbackUrl: "/dashboard/packs" })
     } catch (error) {
       console.error("Google sign in error:", error)
     } finally {
