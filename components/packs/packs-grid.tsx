@@ -27,7 +27,19 @@ const tierImages: Record<string, string> = {
   starter: "/pack1.png",
   premium: "/pack2.png",
   legend: "/pack3.png",
-  grail: "/pack4.png",
+}
+
+const grailImages: Record<TCGType, string> = {
+  pokemon: "/pok_grail.png",
+  scryfall: "/magic_grail.png",
+  yugioh: "/yug_grail.png",
+}
+
+function getPackImage(tcg: TCGType, tier: string): string {
+  if (tier === "grail") {
+    return grailImages[tcg]
+  }
+  return tierImages[tier] || "/pack1.png"
 }
 
 export function PacksGrid({ tcg, autoOpenPackId, onAutoOpenComplete }: PacksGridProps) {
@@ -106,7 +118,7 @@ export function PacksGrid({ tcg, autoOpenPackId, onAutoOpenComplete }: PacksGrid
                 {/* Pack image */}
                 <div className="relative h-48 rounded-lg overflow-hidden mb-4 bg-muted">
                   <Image
-                    src={tierImages[selectedPack.tier]}
+                    src={getPackImage(selectedPack.tcg, selectedPack.tier)}
                     alt={selectedPack.name}
                     fill
                     className="object-cover"

@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { useEffect, useRef } from "react"
-import { Pack, PACK_CONFIG, TCG_INFO } from "@/lib/packs"
+import { Pack, PACK_CONFIG, TCG_INFO, TCGType } from "@/lib/packs"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -14,11 +14,23 @@ import {
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
-const tierImages = {
+const tierImages: Record<string, string> = {
   starter: "/pack1.png",
   premium: "/pack2.png",
   legend: "/pack3.png",
-  grail: "/pack4.png",
+}
+
+const grailImages: Record<TCGType, string> = {
+  pokemon: "/pok_grail.png",
+  scryfall: "/magic_grail.png",
+  yugioh: "/yug_grail.png",
+}
+
+function getPackImage(tcg: TCGType, tier: string): string {
+  if (tier === "grail") {
+    return grailImages[tcg]
+  }
+  return tierImages[tier] || "/pack1.png"
 }
 
 interface PackCardProps {
@@ -126,7 +138,7 @@ export function PackCard({ pack, onPurchase, disabled }: PackCardProps) {
       <div className="relative aspect-[3/4] overflow-hidden">
         <Image
           ref={imageRef}
-          src={tierImages[pack.tier]}
+          src={getPackImage(pack.tcg, pack.tier)}
           alt={PACK_CONFIG[pack.tier].name}
           fill
           className="object-cover"

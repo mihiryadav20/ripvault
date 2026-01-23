@@ -11,11 +11,23 @@ import { TCG_INFO } from "@/lib/packs"
 import { setPackIntent } from "@/lib/pack-intent"
 import { AnimatedPackCard } from "@/components/packs/animated-pack-card"
 
-const tierImages = {
-  grail: "/pack4.png",
+const tierImages: Record<string, string> = {
   legend: "/pack3.png",
   premium: "/pack2.png",
   starter: "/pack1.png",
+}
+
+const grailImages: Record<string, string> = {
+  pokemon: "/pok_grail.png",
+  scryfall: "/magic_grail.png",
+  yugioh: "/yug_grail.png",
+}
+
+function getPackImage(tcg: string, tier: string): string {
+  if (tier === "grail") {
+    return grailImages[tcg] || "/pack4.png"
+  }
+  return tierImages[tier] || "/pack1.png"
 }
 
 const tierConfigs = [
@@ -62,14 +74,14 @@ export default function Home() {
   const openCardDialog = (tierId: string, tcg: string) => {
     const tcgInfo = TCG_INFO[tcg as keyof typeof TCG_INFO]
     const tier = tierConfigs.find(t => t.id === tierId) || tierConfigs[0]
-    
+
     setSelectedCard({
       title: `${tcgInfo.name} ${tier.title}`,
       tcg,
       tier: tierId,
       cardCount: tier.cardCount,
       description: tier.description,
-      image: tierImages[tierId as keyof typeof tierImages],
+      image: getPackImage(tcg, tierId),
       price: tier.price
     })
     setIsDialogOpen(true)

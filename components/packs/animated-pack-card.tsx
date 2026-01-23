@@ -6,11 +6,23 @@ import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { TCG_INFO } from "@/lib/packs"
 
-const tierImages = {
+const tierImages: Record<string, string> = {
   starter: "/pack1.png",
   premium: "/pack2.png",
   legend: "/pack3.png",
-  grail: "/pack4.png",
+}
+
+const grailImages: Record<string, string> = {
+  pokemon: "/pok_grail.png",
+  scryfall: "/magic_grail.png",
+  yugioh: "/yug_grail.png",
+}
+
+function getPackImage(tcg: string, tier: string): string {
+  if (tier === "grail") {
+    return grailImages[tcg] || "/pack4.png"
+  }
+  return tierImages[tier] || "/pack1.png"
 }
 
 interface AnimatedPackCardProps {
@@ -125,7 +137,7 @@ export function AnimatedPackCard({ tier, tcg, cardCount, price, description, onV
       <div className="relative aspect-[3/4] overflow-hidden">
         <Image
           ref={imageRef}
-          src={tierImages[tier as keyof typeof tierImages]}
+          src={getPackImage(tcg, tier)}
           alt={`${tier} ${tcg} pack`}
           fill
           className="object-cover"
