@@ -17,8 +17,6 @@ RipVault combines the excitement of "ripping" (opening) card packs with secure c
 - Protected routes with session management
 - User profile management
 
-### Dashboard
-
 ### Landing Page
 - Animated pack carousels showcasing tiers across all supported TCGs
 - Clickable pack cards open a details dialog
@@ -206,28 +204,130 @@ The following external image domains are configured in `next.config.ts`:
 - `cards.scryfall.io` - MTG card images
 - `images.ygoprodeck.com` - Yu-Gi-Oh card images
 
+## Architecture
+
+### State Management
+- **Balance Context** - React Context for real-time wallet balance updates across components
+- **Server Sessions** - NextAuth.js JWT strategy for persistent authentication
+- **Client-side Fetching** - Custom hooks for data loading with loading states
+
+### Database Transactions
+- **Atomic Operations** - Pack purchases use Prisma transactions to ensure data integrity
+- **Upsert Pattern** - CardTemplate records are upserted to avoid duplicates across purchases
+- **Balance Consistency** - Balance deductions and card additions happen in a single transaction
+
+### 3D Card Effects
+- Mouse-tracked 3D transforms using `perspective(1000px)` with `rotateX/rotateY`
+- `requestAnimationFrame` for smooth 60fps animations
+- Applied to both landing page carousels and dashboard pack cards
+
 ## Key Workflows
 
-### Landing Page Preview → Login → Packs
-1. User lands on `/`
-2. Scrolls through tier-based pack carousels
-3. Clicks a pack card → details dialog opens
-4. Clicks **Login to Buy**
-5. Redirects to `/auth/login?callbackUrl=/dashboard/packs`
-6. After successful login, user lands on `/dashboard/packs`
+### 1. Authentication Flow
 
-### Pack Purchase Flow
-1. User views `/dashboard/packs`
-2. Selects pack (TCG type + tier)
-3. Balance check performed
-4. Cards fetched from external APIs
-5. Cards added to user's collection
-6. Balance deducted atomically
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│  Landing Page   │────▶│   /auth/login    │────▶│   Dashboard     │
+│       /         │     │  Google OAuth    │     │ /dashboard/packs│
+│                 │     │  Email Magic Link│     │                 │
+└─────────────────┘     └──────────────────┘     └─────────────────┘
+```
 
-### Payment Flow
-1. User clicks "Deposit" → Add Funds dialog opens
-2. Enters amount or selects preset
-3. Cashfree payment session created
-4. User completes payment on Cashfree gateway
-5. Callback verifies payment
-6. Balance updated on success
+1. User lands on `/` (landing page with animated pack carousels)
+2. Clicks "Get Started" or clicks a pack → "Login to Buy"
+3. Redirected to `/auth/login`
+4. Chooses authentication method:
+   - **Google OAuth** - One-click sign in
+   - **Email Magic Link** - Passwordless authentication via Resend
+5. On success, redirected to `/dashboard/packs`
+6. Session persisted via JWT tokens
+
+### 2. Pack Purchase Flow
+
+```
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│ Select Pack  │───▶│ Balance Check│───▶│ Fetch Cards  │───▶│ Add to       │
+│ (TCG + Tier) │    │              │    │ from TCG API │    │ Collection   │
+└──────────────┘    └──────────────┘    └──────────────┘    └──────────────┘
+```
+
+**Detailed Steps:**
+1. User views `/dashboard/packs` - Grid organized by TCG (Pokemon, MTG, Yu-Gi-Oh!)
+2. Each pack displays: tier name, card count, price, 3D hover effect
+3. User clicks "Purchase" button
+4. **Balance Validation** - Server checks if `user.balance >= pack.price`
+5. **Card Fetching** - Random cards fetched from external APIs:
+   - Pokemon: `api.pokemontcg.io/v2/cards` (random page selection)
+   - MTG: `api.scryfall.com/cards/search` (random color query)
+   - Yu-Gi-Oh!: `db.ygoprodeck.com/api/v7/cardinfo.php` (random offset)
+6. **Card Randomization** - Fisher-Yates shuffle applied to results
+7. **Database Transaction** (atomic):
+   - Upsert CardTemplate records for each card
+   - Create UserCard entries linking user to cards
+   - Decrement user balance
+8. Success toast displays received cards
+9. Cards immediately viewable in `/dashboard/collection`
+
+### 3. Wallet & Payment Flow
+
+```
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│ Click Deposit│───▶│ Enter Amount │───▶│ Cashfree     │───▶│ Balance      │
+│ in Sidebar   │    │ (₹100-₹5000)│    │ Payment Page │    │ Updated      │
+└──────────────┘    └──────────────┘    └──────────────┘    └──────────────┘
+```
+
+**Detailed Steps:**
+1. User clicks "Deposit" button in sidebar → Add Funds dialog opens
+2. User enters custom amount or selects preset (₹100, ₹500, ₹1,000, ₹5,000)
+3. Clicks "Pay" → `/api/payment/create-order` called
+4. **Order Creation:**
+   - Transaction record created with `PENDING` status
+   - Cashfree order created via SDK
+   - Payment session URL returned
+5. User redirected to Cashfree payment gateway
+6. User completes payment (UPI, Card, Net Banking, etc.)
+7. Cashfree redirects to `/dashboard/payment/callback?order_id=...`
+8. **Payment Verification:**
+   - `/api/payment/verify` checks status with Cashfree
+   - If `PAID`: Transaction marked `SUCCESS`, balance incremented
+   - If `FAILED`: Transaction marked `FAILED`
+9. User redirected to `/dashboard/packs` with updated balance
+10. Balance Context refreshes across all components
+
+### 4. Collection Viewing Flow
+
+```
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│ Navigate to  │───▶│ Fetch Cards  │───▶│ Display Grid │
+│ /collection  │    │ from API     │    │ with Filters │
+└──────────────┘    └──────────────┘    └──────────────┘
+```
+
+**Features:**
+1. User navigates to `/dashboard/collection`
+2. `/api/user/collection` fetches all UserCard entries with CardTemplate data
+3. Cards displayed in responsive grid (2-6 columns based on viewport)
+4. **Filter Options:**
+   - All cards
+   - Pokemon only
+   - MTG only
+   - Yu-Gi-Oh! only
+5. Each card shows: image, name, TCG badge, rarity
+6. Collection stats display count per TCG
+
+## Development Status
+
+### Completed Features
+- Authentication (Google OAuth + Email Magic Links)
+- Card pack system (3 TCGs × 4 tiers = 12 pack variants)
+- Collection management with filtering
+- Wallet and Cashfree payment integration
+- Dashboard with animated sidebar navigation
+- 3D perspective hover effects on pack cards
+- Responsive design with mobile support
+
+### Coming Soon
+- **Marketplace** - Trade cards with other collectors
+- **Card Details Modal** - View detailed card information
+- **Trading System** - Peer-to-peer card trading
