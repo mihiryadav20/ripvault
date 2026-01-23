@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { setPendingPurchase } from "@/lib/pack-intent"
 
 declare global {
   interface Window {
@@ -28,17 +29,23 @@ declare global {
 interface AddFundsDialogProps {
   onSuccess?: () => void
   children?: React.ReactNode
+  packIntent?: { tcg: string; tier: string }
+  suggestedAmount?: number
 }
 
-export function AddFundsDialog({ onSuccess, children }: AddFundsDialogProps) {
+export function AddFundsDialog({ onSuccess, children, packIntent, suggestedAmount }: AddFundsDialogProps) {
   const [open, setOpen] = useState(false)
-  const [amount, setAmount] = useState("")
+  const [amount, setAmount] = useState(suggestedAmount?.toString() || "")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
 
   const presetAmounts = [100, 500, 1000, 5000]
 
   const handleAddFunds = async () => {
+    // Store pack intent if provided (for auto-purchase after payment)
+    if (packIntent) {
+      setPendingPurchase(packIntent.tcg, packIntent.tier)
+    }
     const numAmount = parseFloat(amount)
 
     if (!numAmount || numAmount < 1) {

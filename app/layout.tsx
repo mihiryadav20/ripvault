@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { SessionProvider } from "next-auth/react"
 import { Toaster } from "@/components/ui/sonner"
+import Script from "next/script"
 import "./globals.css"
 
 const geistSans = Geist({
@@ -33,6 +34,10 @@ export default function RootLayout({
           {children}
           <Toaster />
         </SessionProvider>
+        <Script
+          src="https://sdk.cashfree.com/js/v3/cashfree.js"
+          strategy="beforeInteractive"
+        />
       </body>
     </html>
   )

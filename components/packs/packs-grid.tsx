@@ -1,59 +1,82 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Pack, TCGType, TCG_INFO, generatePacks } from "@/lib/packs"
 import { PackCard } from "./pack-card"
-import { toast } from "sonner"
 import { useBalance } from "@/context/balance-context"
+import { useRipExperience } from "@/hooks/use-rip-experience"
+import { AddFundsDialog } from "@/components/payment/add-funds-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import Image from "next/image"
 
 interface PacksGridProps {
   tcg: TCGType
+  autoOpenPackId?: string
+  onAutoOpenComplete?: () => void
 }
 
-export function PacksGrid({ tcg }: PacksGridProps) {
-  const [purchasing, setPurchasing] = useState<string | null>(null)
-  const { balance, refreshBalance } = useBalance()
+const tierImages: Record<string, string> = {
+  starter: "/pack1.png",
+  premium: "/pack2.png",
+  legend: "/pack3.png",
+  grail: "/pack4.png",
+}
+
+export function PacksGrid({ tcg, autoOpenPackId, onAutoOpenComplete }: PacksGridProps) {
+  const [selectedPack, setSelectedPack] = useState<Pack | null>(null)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+  const { balance } = useBalance()
+  const { purchaseAndRip, isPurchasing } = useRipExperience()
   const packs = generatePacks(tcg)
   const tcgInfo = TCG_INFO[tcg]
-
   const currentBalance = balance ?? 0
 
-  const handlePurchase = async (pack: Pack) => {
-    if (currentBalance < pack.price) {
-      toast.error("Insufficient Balance", {
-        description: `You need ₹${pack.price - currentBalance} more to purchase this pack.`,
-      })
-      return
-    }
-
-    setPurchasing(pack.id)
-
-    try {
-      const response = await fetch("/api/packs/purchase", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ packId: pack.id, tcg: pack.tcg, tier: pack.tier }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to purchase pack")
+  // Handle auto-open
+  useEffect(() => {
+    if (autoOpenPackId) {
+      const pack = packs.find((p) => p.id === autoOpenPackId)
+      if (pack) {
+        setSelectedPack(pack)
+        setIsDialogOpen(true)
+        onAutoOpenComplete?.()
       }
+    }
+  }, [autoOpenPackId, packs, onAutoOpenComplete])
 
-      const data = await response.json()
+  const handlePackClick = (pack: Pack) => {
+    setSelectedPack(pack)
+    setIsDialogOpen(true)
+  }
 
-      toast.success("Pack Purchased!", {
-        description: `You got ${data.cards.length} cards! Check your collection.`,
-      })
+  const handleRipNow = async () => {
+    if (!selectedPack) return
 
-      refreshBalance()
-    } catch {
-      toast.error("Purchase Failed", {
-        description: "Something went wrong. Please try again.",
-      })
-    } finally {
-      setPurchasing(null)
+    await purchaseAndRip(selectedPack.tcg, selectedPack.tier, () => {
+      // This callback is called when balance is insufficient
+      // The dialog stays open and user can use Add Funds
+    })
+  }
+
+  const handleDialogClose = (open: boolean) => {
+    if (!isPurchasing) {
+      setIsDialogOpen(open)
+      if (!open) {
+        setSelectedPack(null)
+      }
     }
   }
+
+  const insufficientBalance = selectedPack ? currentBalance < selectedPack.price : false
+  const amountNeeded = selectedPack ? selectedPack.price - currentBalance : 0
 
   return (
     <div className="space-y-4">
@@ -63,11 +86,99 @@ export function PacksGrid({ tcg }: PacksGridProps) {
           <PackCard
             key={pack.id}
             pack={pack}
-            onPurchase={handlePurchase}
-            disabled={purchasing === pack.id || currentBalance < pack.price}
+            onPurchase={handlePackClick}
+            disabled={false}
           />
         ))}
       </div>
+
+      {/* Pack Details Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
+        <DialogContent className="sm:max-w-md">
+          {selectedPack && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{selectedPack.name}</DialogTitle>
+                <DialogDescription>{selectedPack.description}</DialogDescription>
+              </DialogHeader>
+
+              <div className="py-4">
+                {/* Pack image */}
+                <div className="relative h-48 rounded-lg overflow-hidden mb-4 bg-muted">
+                  <Image
+                    src={tierImages[selectedPack.tier]}
+                    alt={selectedPack.name}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+
+                {/* Pack details */}
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Game:</span>
+                    <span className="ml-2 font-medium">{tcgInfo.name}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Tier:</span>
+                    <span className="ml-2 font-medium capitalize">
+                      {selectedPack.tier}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Cards:</span>
+                    <span className="ml-2 font-medium">
+                      {selectedPack.cardCount}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Price:</span>
+                    <span className="ml-2 font-medium">
+                      ₹{selectedPack.price}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Balance info */}
+                <div className="mt-4 p-3 rounded-lg bg-muted/50">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Your Balance:</span>
+                    <span className="font-medium">₹{currentBalance}</span>
+                  </div>
+                  {insufficientBalance && (
+                    <p className="text-sm text-destructive mt-2">
+                      You need ₹{amountNeeded} more to rip this pack.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <DialogFooter className="flex gap-2 sm:gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => handleDialogClose(false)}
+                  disabled={isPurchasing}
+                >
+                  Cancel
+                </Button>
+
+                {insufficientBalance ? (
+                  <AddFundsDialog
+                    packIntent={{ tcg: selectedPack.tcg, tier: selectedPack.tier }}
+                    suggestedAmount={Math.max(amountNeeded, 100)}
+                  >
+                    <Button>Add ₹{Math.max(amountNeeded, 100)}</Button>
+                  </AddFundsDialog>
+                ) : (
+                  <Button onClick={handleRipNow} disabled={isPurchasing}>
+                    {isPurchasing ? "Ripping..." : "Rip Now"}
+                  </Button>
+                )}
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

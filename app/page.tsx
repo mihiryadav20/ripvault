@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Image from "next/image"
 import { TCG_INFO } from "@/lib/packs"
+import { setPackIntent } from "@/lib/pack-intent"
 import { AnimatedPackCard } from "@/components/packs/animated-pack-card"
 
 const tierImages = {
@@ -74,9 +75,15 @@ export default function Home() {
     setIsDialogOpen(true)
   }
 
-  const handleLoginToBuy = () => {
+  const handleRipNow = () => {
+    if (selectedCard) {
+      // Store intent in localStorage for after login
+      setPackIntent(selectedCard.tcg, selectedCard.tier)
+    }
     setIsDialogOpen(false)
-    router.push('/auth/login?callbackUrl=/dashboard/packs')
+    // Include pack parameter in callback URL
+    const packId = selectedCard ? `${selectedCard.tcg}-${selectedCard.tier}` : ''
+    router.push(`/auth/login?callbackUrl=/dashboard/packs${packId ? `?pack=${packId}` : ''}`)
   }
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -226,11 +233,11 @@ export default function Home() {
                 >
                   Close
                 </Button>
-                <Button 
+                <Button
                   type="button"
-                  onClick={handleLoginToBuy}
+                  onClick={handleRipNow}
                 >
-                  Login to Buy
+                  Rip Now
                 </Button>
               </DialogFooter>
             </>
